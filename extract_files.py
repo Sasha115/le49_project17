@@ -2,7 +2,7 @@ from keras.applications.vgg19 import VGG19
 from keras.preprocessing import image
 #from keras.applications.vgg16 import preprocess_input, decode_predictions
 from keras.applications.vgg19 import preprocess_input, decode_predictions
-from keras.layers import Dense, GlobalAveragePooling2D
+from keras.layers import Dense, GlobalAveragePooling2D, GlobalMaxPooling2D
 import numpy as np
 from keras.models import Sequential, Model
 from keras.layers import Input
@@ -23,12 +23,19 @@ batch_size = 100
 
 #define model
 
+
 input_tensor = Input(shape=(224, 224, 3))
-model = VGG19(input_tensor=input_tensor,weights='imagenet',include_top=False)
+base_model = VGG19(input_tensor=input_tensor,weights='imagenet',include_top=False)
+#option 1
+model = Model(inputs=base_model.input, outputs=base_model.get_layer('block5_conv4').output)
+#option 2
+#model = Model(inputs=base_model.input, outputs=base_model.get_layer('block2_conv2').output)
 vgg_output = model(input_tensor)
-shape = (7,7,512)
-pooling = GlobalAveragePooling2D(input_shape=shape)(vgg_output)
-comb_model = Model(inputs=input_tensor, outputs=pooling)
+shape = (14,14,512)
+#global_pooling = GlobalAveragePooling2D(input_shape=shape)(vgg_output)
+max_pooling = GlobalMaxPooling2D(input_shape=shape)(vgg_output)
+comb_model = Model(inputs=input_tensor, outputs=max_pooling)
+#comb_model = Model(inputs=input_tensor, outputs=global_pooling)
 
 def grouper(n, iterable, fillvalue=None):
   args = [iter(iterable)]*n
@@ -72,5 +79,11 @@ all_predictions = np.reshape(all_predictions,(num_batches*batch_size,512))
 all_names = np.reshape(all_names,(num_batches*batch_size))
 
 print("Started Save")
-np.save('predictions.npy', all_predictions) 
-np.save('names.npy', all_names)
+#np.save('predictions_block5_global.npy', all_predictions) 
+#np.save('names_block5_global.npy', all_names)
+np.save('predictions_block5_max.npy', all_predictions) 
+np.save('names_block5_max.npy', all_names)
+#np.save('predictions_block2_global.npy', all_predictions) 
+#np.save('names_block5_global.npy', all_names)
+#np.save('predictions_block2_max.npy', all_predictions) 
+#np.save('names_block5_max.npy', all_names)
